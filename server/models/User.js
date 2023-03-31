@@ -1,42 +1,42 @@
-const mongoose = require('mongoose');
+const mongoose = require('mongoose'); //Require mongoose
 
 const UserSchema = new mongoose.Schema({
   firstName: {
-    type: String,
+    type: String, //User's inputted first name
     required:true
   },
   lastName: {
-    type: String,
+    type: String, //User's inputted last name
     required: true
   },
   age: {
-    type: Number,
-    min: 0,
-    max: 130,
+    type: Number, //User's inputted age
+    min: 13, //We only allow signups of users 13 and older
+    max: 130, //Set an upper age limit of 130
     required: true
   },
   email: {
-    type: String,
+    type: String, //User's inputted email
     required: true
   },
   password: {
-    type: String,
+    type: String, //Password which is hashed by bcrypt
     required: true
   },
   friends: [{
-    type: mongoose.Schema.Types.ObjectId,
+    type: mongoose.Schema.Types.ObjectId, //friends are stored as references to another document ID of the friend's user document
   }],
   likes:[{
-    type: mongoose.Schema.Types.ObjectId,
+    type: mongoose.Schema.Types.ObjectId, //likes are stored as references to another document ID of the like data
 
   }],
   shares:[{
-    type: mongoose.Schema.Types.ObjectId,
+    type: mongoose.Schema.Types.ObjectId, //shares are stored as references toa nother document ID of the share data
   }],
   dateCreated:{
-    type: Date,
+    type: Date, //Date is set when the user is first created in the user controller
     required: true
   }
 });
 
-module.exports = mongoose.model('User',UserSchema);
+module.exports = mongoose.model('User',UserSchema); //export the user model

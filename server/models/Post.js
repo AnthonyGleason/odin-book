@@ -26,7 +26,7 @@ const PostSchema = new mongoose.Schema({
     type: String,
     required
   },
-  date: {
+  dateCreated: {
     type: Date,
     required
   }

@@ -14,7 +14,7 @@ const CommentSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     required: true,
   },
-  date:{
+  dateCreated:{
     type: Date,
     required: true,
   },

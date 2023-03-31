@@ -2,33 +2,54 @@ const UserModel = require('../models/User');
 
 //create user
 let createUser = async function(firstName,lastName,age,email,password){
-  return await UserModel.create({
-    firstName: firstName,//firstName
-    lastName: lastName,//lastName
-    age: age,//age
-    email: email,//email
-    password: password,//password
-    friends: [],//friends
-    likes: [],//likes
-    shares: [],//shares
-    dateCreated: Date.now()//dateCreated
-  });
+  try{
+    return await UserModel.create({
+      firstName: firstName,//firstName
+      lastName: lastName,//lastName
+      age: age,//age
+      email: email,//email
+      password: password,//password
+      friends: [],//friends
+      likes: [],//likes
+      shares: [],//shares
+      dateCreated: Date.now()//dateCreated
+    });
+  }catch(e){
+    console.log(`Error creating a new user ${e}`);
+  };
 };
 //get user
 let getUser = async function(docID){
-  return await UserModel.findById(docID);
+  try{
+    return await UserModel.findById(docID);
+  }catch(e){
+    console.log(`Error getting data for user, ${docID}, ${e}`);
+  };
+  
 };
 //get all users
 let getAllUsers = async function(){
-  return await UserModel.find({});
+  try{
+    return await UserModel.find({});
+  }catch(e){
+    console.log(`Error when getting data for all users, ${e}`);
+  };
 };
 //update user
 let updateUser = async function(docID,updatedUser){
-  return await UserModel.findByIdAndUpdate(docID,updatedUser);
+  try{
+    return await UserModel.findByIdAndUpdate(docID,updatedUser,{new: true}); //new: true option returns the updated user object
+  }catch(e){
+    console.log(`Error when updating user, ${docID}, ${e}`);
+  };
 };
 //delete user
 let deleteUser = async function(docID){
-  return await UserModel.findByIdAndDelete(docID);
+  try{
+    return await UserModel.findByIdAndDelete(docID);
+  }catch(e){
+    console.log(`Error when deleting user, ${docID}, ${e}`);
+  };
 };
 
 module.exports = {
