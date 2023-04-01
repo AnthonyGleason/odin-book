@@ -1,6 +1,6 @@
 var express = require('express');
 const { createUser, getUser, updateUser, getUserByEmail } = require('../controllers/user');
-const {createPost} = require('../controllers/post');
+const {createPost,getPost, updatePost} = require('../controllers/post');
 var router = express.Router();
 const bcrypt = require('bcrypt');
 const passport = require('passport');
@@ -145,36 +145,74 @@ router.post('/user/:id/decline',passport.authenticate(),async (req,res,next)=>{
 });
 
 //create a post
-router.post('/post',async(req,res,next)=>{
+router.post('/post',passport.authenticate(),async(req,res,next)=>{
   //get docID of current user
-  //verify user is signed in and docID is theirs
+  const docID = req.user._id;
   //create a new post
   try{
+    //create post
     const post = await createPost(
-      author,//author
-      text,//text
-      title//title
+      req.body.docID,//author
+      req.body.text,//text
+      req.body.title//title
     );
-    res.status(200).json({'post': post});
+    //get user
+    let user = await getUser(docID);
+    //add post id to user posts array
+    user.posts.push(post._id);
+    //update user
+    user = await updateUser(docID,user);
+    res.status(200).json({'user': user});
   }catch(e){
     console.log(`Error when creating a post, ${e}`);
+    res.status(500).json({err: 'Error when creating a new post'});
   }
-  //get user information from mongodb
-  //update the posts array pushing the new docID
 });
+
 //update a post
+router.put('/post/:id',passport.authenticate(),async(req,res,next)=>{
+  //see if post was created by the current authenticated user
+  let post = await getPost(req.params.id);
+  if (req.user._id!==post.author) res.status(401).json({err: 'Cannot edit a post you did not create'});
+  try{
+    const updatedPost = await updatePost(req.params.id,{
+      comments: post.comments, //comments from post
+      likes: post.likes, //likes taken from post
+      shares: post.shares, //shares taken from post
+      author: post.author, //author taken from post
+      text: req.body.text, //set text from input
+      title: req.body.title, //set title from input
+      dateCreated: post.date, //date taken from post
+    });
+    res.status(200).json({post:updatedPost});
+  }catch(e){
+    console.log(`There was an error when updating post ${req.params.id}, ${e}`);
+    res.status(500).json({err: `Internal error occured when updating the post ${e}`});
+  }
+});
+
 //delete a post
+
 //like a post
+
 //unlike a post
+
 //share a post
+
 //unshare a post
 
 //create a comment on a post
+
 //update comment
+
 //delete a comment
+
 //share a comment
+
 //unshare a comment
+
 //like a comment
+
 //unlike a comment
 
 module.exports = router;
