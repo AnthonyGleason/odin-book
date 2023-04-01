@@ -13,7 +13,10 @@ env.config();
 router.get('/', function(req, res, next) {
   res.status(200).json({message: 'welcome to the api!'});
 });
-
+//get logged in status
+router.get('/',passport.authenticate('jwt',{session: false}),async function(req,res,next){
+  res.status(200).json({signedIn: true});
+});
 //login
 router.post('/login',async function(req,res,next){
   const emailInput = req.body.email; //get the email input from the request body
