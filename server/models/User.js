@@ -34,7 +34,10 @@ const UserSchema = new mongoose.Schema({
 
   }],
   shares:[{
-    type: mongoose.Schema.Types.ObjectId, //shares are stored as references toa nother document ID of the share data
+    type: mongoose.Schema.Types.ObjectId, //shares are stored as references to another document ID of the share data
+  }],
+  comments:[{
+    type: mongoose.Schema.Types.ObjectId, //comments are stored as references to another document ID which contains the comment data
   }],
   dateCreated:{
     type: Date, //Date is set when the user is first created in the user controller

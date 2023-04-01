@@ -13,6 +13,7 @@ let createUser = async function(firstName,lastName,age,email,password){
       friends: [],//friends
       likes: [],//likes
       shares: [],//shares
+      comments: [],//comments
       dateCreated: Date.now()//dateCreated
     });
   }catch(e){

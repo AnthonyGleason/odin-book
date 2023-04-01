@@ -1,6 +1,7 @@
 var express = require('express');
 const { createUser, getUser, updateUser, getUserByEmail } = require('../controllers/user');
 const {createPost,getPost, updatePost, deletePost} = require('../controllers/post');
+const {createComment, updateComment} = require('../controllers/comment');
 var router = express.Router();
 const bcrypt = require('bcrypt');
 const passport = require('passport');
@@ -65,19 +66,21 @@ router.put('/user/:id', passport.authenticate('jwt',{session: false}),async func
   const docID = req.params.id;
   if (docID!==req.user._id) res.json({err: "cannot update the data for another user"});
   try{
-    const user = await updateUser(docID,{
+    const user = await getUser(docID);
+    const updatedUser = await updateUser(docID,{
       firstName: req.body.firstName,
       lastName: req.body.lastName,
       age: req.body.age,
       email: req.body.email,
       password: req.body.password,
-      friendRequests: req.body.friendRequests,
-      friends: req.body.friends,
-      likes: req.body.likes,
-      shares: req.body.shares,
-      dateCreated: req.body.dateCreated,
+      friendRequests: user.friendRequests,
+      friends: user.friends,
+      likes: user.likes,
+      shares: user.shares,
+      comments: user.comments,
+      dateCreated: user.dateCreated,
     });
-    res.status(200).json({user: user});
+    res.status(200).json({user: updatedUser});
   }catch(e){
     console.log(`Error when updating user information, ${e}`);
     res.status(401).json({err: 'unauthorized'});
@@ -253,27 +256,116 @@ router.delete('/post/:id/like',passport.authenticate('jwt',{session: false}),asy
 
 //share a post
 router.put('/post/:id/share',passport.authenticate('jwt',{session: false}),async(req,res,next)=>{
-
+  //get ids
+  const postID = req.params.id; //get post id
+  const userID = req.user._id; //get user id
+  try{
+    //get data from mongodb
+    const post = await getPost(postID); //get post obj
+    const user = await getUser(userID); //get user obj
+    //add user id to post shares array
+    post.shares.push(user._id);
+    //add post id to user shares array
+    user.shares.push(post._id);
+    //update both the user and post;
+    await updatePost(postID, post);
+    await updateUser(userID, user);
+    res.status(200).json({message: 'post sucessfully shared'});
+  }catch(e){
+    console.log(`Error when handling post share, ${e}`);
+    res.status(500).json({err: 'error handling post share'});
+  }
 });
 
 //unshare a post
 router.delete('/post/:id/share',passport.authenticate('jwt',{session: false}),async(req,res,next)=>{
-
+  //get ids
+  const postID = req.params.id; //get post id
+  const userID = req.user._id; //get user id
+  try{
+    //get data from mongodb
+    const post = await getPost(postID); //get post obj
+    const user = await getUser(userID); //get user obj
+    //remove the user id from the post shares array
+    post.shares.splice(post.shares.indexOf(userID),1);
+    //remove the post id from the user shares array
+    user.shares.splice(user.shares.indexOf(postID),1);
+    //update both the user and post;
+    await updatePost(postID, post);
+    await updateUser(userID, user);
+    res.status(200).json({message: 'post sucessfully unshared'});
+  }catch(e){
+    console.log(`Error when handling post unshare, ${e}`);
+    res.status(500).json({err: 'error handling post unshare'});
+  }
 });
 
 //create a comment on a post
 router.post('/post/:id/comment',passport.authenticate('jwt',{session: false}),async(req,res,next)=>{
-
+  const postID = req.params.id;
+  const userID = req.user._id;
+  try{
+    const comment = await createComment(
+      userID, //author
+      req.body.text//text
+    );
+    //update comments arrays
+    let post = await getPost(postID);
+    let user = await getUser(userID);
+    post.comments.push(comment._id);
+    user.comments.push(comment._id);
+    //update mongodb
+    await updatePost(postID,post);
+    await updateUser(userID,user);
+    res.status(200).json({message: `created a comment with docID ${comment._id}`});
+  }catch(e){
+    console.log(`Error when creating comment, ${e}`);
+    res.status(500).json({err: `error when creating a comment on post, ${postID}, with user, ${userID}`});
+  };
 });
 
 //update comment
 router.put('/post/:id/comment/:commentID',passport.authenticate('jwt',{session: false}),async(req,res,next)=>{
-
+  const postID = req.params.id;
+  const commentID = req.params.commentID;
+  try{
+    //check to see if user is updating a comment they made
+    let post = await getPost(postID);
+    let comment = await getComment(commentID);
+    if (req.user._id!==comment.author) res.status(401).json({err: `cannot update another user's comment`});
+    //update comment data with input
+    comment.text=req.body.text;
+    //update mongodb
+    await updateComment(commentID,comment);
+    res.status(200).json({message: `updated a comment with docID ${comment._id}`});
+  }catch(e){
+    console.log(`Error when updating comment, ${e}`);
+    res.status(500).json({err: `error when updating a comment on post, ${postID}, with user, ${userID}`});
+  };
 });
 
 //delete a comment
 router.delete('/post/:id/comment/:commentID',passport.authenticate('jwt',{session: false}),async(req,res,next)=>{
-
+  const postID = req.params.id;
+  const userID = req.user._id;
+  const commentID = req.params.commentID;
+  const commentObj = await getComment(commentID);
+  if (commentObj.author!==req.user._id) res.status(401).json({err: `cannot delete a comment not made by this user`});
+  try{
+    //comment is not removed from database incase it was something harmful from the user side it is hidden
+    //update comments arrays
+    let post = await getPost(postID);
+    let user = await getUser(userID);
+    post.comments.splice(post.comments.indexOf(commentID,1));
+    user.comments.splice(user.comments.indexOf(commentID,1));
+    //update mongodb
+    await updatePost(postID,post);
+    await updateUser(userID,user);
+    res.status(200).json({message: `deleted a comment with docID ${commentID}`});
+  }catch(e){
+    console.log(`Error when deleting comment, ${e}`);
+    res.status(500).json({err: `error when deleting a comment on post, ${postID}, with user, ${userID}`});
+  };
 });
 
 //share a comment
