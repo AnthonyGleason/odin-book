@@ -1,7 +1,7 @@
 var express = require('express');
 const { createUser, getUser, updateUser, getUserByEmail } = require('../controllers/user');
 const {createPost,getPost, updatePost, deletePost} = require('../controllers/post');
-const {createComment, updateComment} = require('../controllers/comment');
+const {createComment, updateComment, getComment} = require('../controllers/comment');
 var router = express.Router();
 const bcrypt = require('bcrypt');
 const passport = require('passport');
@@ -370,22 +370,82 @@ router.delete('/post/:id/comment/:commentID',passport.authenticate('jwt',{sessio
 
 //share a comment
 router.put('/post/:id/comment/:commentID/share',passport.authenticate('jwt',{session: false}),async(req,res,next)=>{
-
+  //get ids
+  const commentID = req.params.commentID;
+  const userID = req.user._id;
+  //get post and comment objects
+  try{
+    let comment = await getComment(commentID);
+    let user = await getUser(userID);
+    comment.shares.push(userID);
+    user.shares.push(commentID);
+    //update user and comments;
+    await updateComment(commentID, comment);
+    await updateUser(userID, user);
+    res.status(200).json({message: `succesfully shared a comment, ${commentID}`});
+  }catch(e){
+    res.status(500).json({err: `internal error occured when sharing comment, ${commentID}`});
+  };
 });
 
 //unshare a comment
 router.delete('/post/:id/comment/:commentID/share',passport.authenticate('jwt',{session: false}),async(req,res,next)=>{
-
+  //get ids
+  const commentID = req.params.commentID;
+  const userID = req.user._id;
+  //get post and comment objects
+  try{
+    let comment = await getComment(commentID);
+    let user = await getUser(userID);
+    comment.shares.splice(comment.shares.indexOf(userID),1);
+    user.shares.splice(user.shares.indexOf(commentID),1);
+    //update user and comments;
+    await updateComment(commentID, comment);
+    await updateUser(userID, user);
+    res.status(200).json({message: `succesfully unshared a comment, ${commentID}`});
+  }catch(e){
+    res.status(500).json({err: `internal error occured when unsharing comment, ${commentID}`});
+  };
 });
 
 //like a comment
 router.put('/post/:id/comment/:commentID/like',passport.authenticate('jwt',{session: false}),async(req,res,next)=>{
-
+  //get ids
+  const commentID = req.params.commentID;
+  const userID = req.user._id;
+  //get post and comment objects
+  try{
+    let comment = await getComment(commentID);
+    let user = await getUser(userID);
+    comment.likes.push(userID);
+    user.likes.push(commentID);
+    //update user and comments;
+    await updateComment(commentID, comment);
+    await updateUser(userID, user);
+    res.status(200).json({message: `succesfully liked a comment, ${commentID}`});
+  }catch(e){
+    res.status(500).json({err: `internal error occured when liking comment, ${commentID}`});
+  };
 });
 
 //unlike a comment
 router.delete('/post/:id/comment/:commentID/like',passport.authenticate('jwt',{session: false}),async(req,res,next)=>{
-
+   //get ids
+   const commentID = req.params.commentID;
+   const userID = req.user._id;
+   //get post and comment objects
+   try{
+     let comment = await getComment(commentID);
+     let user = await getUser(userID);
+     comment.likes.splice(comments.likes.indexOf(userID),1);
+     user.likes.splice(comments.likes.indexOf(commentID),1);
+     //update user and comments;
+     await updateComment(commentID, comment);
+     await updateUser(userID, user);
+     res.status(200).json({message: `succesfully unliked a comment, ${commentID}`});
+   }catch(e){
+     res.status(500).json({err: `internal error occured when unliking comment, ${commentID}`});
+   };
 });
 
 module.exports = router;
