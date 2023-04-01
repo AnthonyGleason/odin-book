@@ -1,6 +1,6 @@
 var express = require('express');
 const { createUser, getUser, updateUser, getUserByEmail } = require('../controllers/user');
-const {createPost,getPost, updatePost} = require('../controllers/post');
+const {createPost,getPost, updatePost, deletePost} = require('../controllers/post');
 var router = express.Router();
 const bcrypt = require('bcrypt');
 const passport = require('passport');
@@ -21,14 +21,15 @@ router.post('/login',async function(req,res,next){
   const match = await bcrypt.compare(passwordInput, user.password); //compare the hashed password to the inputted password
   if (match){
     const token = jwt.sign({ id: user._id }, SECRET); //sign a jwt token
-    res.status(200).json({ token }); //send the token to client 
+    //http only is disabled so we can access the cookie value in the client
+    res.status(200).cookie('jwt', token, { httpOnly: false, secure: true });
   }else{
     res.status(401).json({message: 'password do not match'});
   };
 });
 
 //create a user
-router.post('/user',passport.authenticate(),async function(req,res,next){
+router.post('/user',passport.authenticate('jwt',{session: false}),async function(req,res,next){
   //hash password
   const hashedPassword = await bcrypt.hash(req.body.password,10);
   //create a new user sending user inputs to the createUser model.
@@ -48,7 +49,7 @@ router.post('/user',passport.authenticate(),async function(req,res,next){
 });
 
 //get a user
-router.get('/user/:id', passport.authenticate(),async function(req,res,next){
+router.get('/user/:id', passport.authenticate('jwt',{session: false}),async function(req,res,next){
   try{
     const user = await getUser(req.params.id); //get a user with docID from url params
     res.status(200).json({user: user});
@@ -59,7 +60,7 @@ router.get('/user/:id', passport.authenticate(),async function(req,res,next){
 });
 
 //update a user
-router.put('/user/:id', passport.authenticate(),async function(req,res,next){
+router.put('/user/:id', passport.authenticate('jwt',{session: false}),async function(req,res,next){
   //get user id to be updated
   const docID = req.params.id;
   if (docID!==req.user._id) res.json({err: "cannot update the data for another user"});
@@ -84,7 +85,7 @@ router.put('/user/:id', passport.authenticate(),async function(req,res,next){
 });
 
 //send a friend request to another user. :id refers to another user who the person sending the request wants to friend request
-router.post('/user/:id/request',passport.authenticate(), async(req,res,next)=>{
+router.post('/user/:id/request',passport.authenticate('jwt',{session: false}), async(req,res,next)=>{
   //get recieving users id from url
   const recieveReqUser = req.params.id;
   //get the sending user url from body
@@ -102,7 +103,7 @@ router.post('/user/:id/request',passport.authenticate(), async(req,res,next)=>{
 });
 
 //accept a friend request from another user. :id refers to the user making the request
-router.post('/user/:id/accept',passport.authenticate(),async(req,res,next)=>{
+router.post('/user/:id/accept',passport.authenticate('jwt',{session: false}),async(req,res,next)=>{
   //verify user is allowed to make request
   if (req.params.id!==req.user._id) res.status(401).json({'err': 'cannot accept a friend request for another user'});
   const userOneID = req.params.id;
@@ -126,7 +127,7 @@ router.post('/user/:id/accept',passport.authenticate(),async(req,res,next)=>{
 });
 
 //decline a friend request from another user. :id refers to the user making the request
-router.post('/user/:id/decline',passport.authenticate(),async (req,res,next)=>{
+router.post('/user/:id/decline',passport.authenticate('jwt',{session: false}),async (req,res,next)=>{
   //verify user is the user making the request to decline
   if (req.params.id!==req.user._id) res.status(401).json({err: 'cannot decline a friend request for another user'});
   const userOneID = req.params.id;
@@ -145,7 +146,7 @@ router.post('/user/:id/decline',passport.authenticate(),async (req,res,next)=>{
 });
 
 //create a post
-router.post('/post',passport.authenticate(),async(req,res,next)=>{
+router.post('/post',passport.authenticate('jwt',{session: false}),async(req,res,next)=>{
   //get docID of current user
   const docID = req.user._id;
   //create a new post
@@ -170,7 +171,7 @@ router.post('/post',passport.authenticate(),async(req,res,next)=>{
 });
 
 //update a post
-router.put('/post/:id',passport.authenticate(),async(req,res,next)=>{
+router.put('/post/:id',passport.authenticate('jwt',{session: false}),async(req,res,next)=>{
   //see if post was created by the current authenticated user
   let post = await getPost(req.params.id);
   if (req.user._id!==post.author) res.status(401).json({err: 'Cannot edit a post you did not create'});
@@ -191,28 +192,108 @@ router.put('/post/:id',passport.authenticate(),async(req,res,next)=>{
   }
 });
 
-//delete a post
+//allow users to delete their own posts
+router.delete('/post/:id',passport.authenticate('jwt',{session: false}),async(req,res,next)=>{
+  //see if post was created by the current authenticated user
+  let post = await getPost(req.params.id);
+  if (req.user._id!==post.author) res.status(401).json({err: 'Cannot delete a post you did not create'});
+  try{
+    await deletePost(req.params.id);
+    res.status(200).json({message: `deleted a post with docID , ${req.params.id}`});
+  }catch(e){
+    console.log(`There was an error when updating post ${req.params.id}, ${e}`);
+  };
+});
 
 //like a post
+router.put('/post/:id/like',passport.authenticate('jwt',{session: false}),async(req,res,next)=>{
+  //get ids
+  const postID = req.params.id; //get post id
+  const userID = req.user._id; //get user id
+  try{
+    //get data from mongodb
+    const post = await getPost(postID); //get post obj
+    const user = await getUser(userID); //get user obj
+    //add user id to post likes array
+    post.likes.push(user._id);
+    //add post id to user likes array
+    user.likes.push(post._id);
+    //update both the user and post;
+    await updatePost(postID, post);
+    await updateUser(userID, user);
+    res.status(200).json({message: 'post sucessfully liked!'});
+  }catch(e){
+    console.log(`Error when handling post like, ${e}`);
+    res.status(500).json({err: 'error handling post like'});
+  }
+});
 
 //unlike a post
+router.delete('/post/:id/like',passport.authenticate('jwt',{session: false}),async(req,res,next)=>{
+  //get ids
+  const postID = req.params.id; //get post id
+  const userID = req.user._id; //get user id
+  try{
+    //get data from mongodb
+    const post = await getPost(postID); //get post obj
+    const user = await getUser(userID); //get user obj
+    //remove the user id from the post likes array
+    post.likes.splice(post.likes.indexOf(userID),1);
+    //remove the post id from the user likes array
+    user.likes.splice(user.likes.indexOf(postID),1);
+    //update both the user and post;
+    await updatePost(postID, post);
+    await updateUser(userID, user);
+    res.status(200).json({message: 'post sucessfully unliked'});
+  }catch(e){
+    console.log(`Error when handling post like, ${e}`);
+    res.status(500).json({err: 'error handling post unlike'});
+  }
+});
 
 //share a post
+router.put('/post/:id/share',passport.authenticate('jwt',{session: false}),async(req,res,next)=>{
+
+});
 
 //unshare a post
+router.delete('/post/:id/share',passport.authenticate('jwt',{session: false}),async(req,res,next)=>{
+
+});
 
 //create a comment on a post
+router.post('/post/:id/comment',passport.authenticate('jwt',{session: false}),async(req,res,next)=>{
+
+});
 
 //update comment
+router.put('/post/:id/comment/:commentID',passport.authenticate('jwt',{session: false}),async(req,res,next)=>{
+
+});
 
 //delete a comment
+router.delete('/post/:id/comment/:commentID',passport.authenticate('jwt',{session: false}),async(req,res,next)=>{
+
+});
 
 //share a comment
+router.put('/post/:id/comment/:commentID/share',passport.authenticate('jwt',{session: false}),async(req,res,next)=>{
+
+});
 
 //unshare a comment
+router.delete('/post/:id/comment/:commentID/share',passport.authenticate('jwt',{session: false}),async(req,res,next)=>{
+
+});
 
 //like a comment
+router.put('/post/:id/comment/:commentID/like',passport.authenticate('jwt',{session: false}),async(req,res,next)=>{
+
+});
 
 //unlike a comment
+router.delete('/post/:id/comment/:commentID/like',passport.authenticate('jwt',{session: false}),async(req,res,next)=>{
+
+});
 
 module.exports = router;
