@@ -14,7 +14,7 @@ router.get('/', function(req, res, next) {
   res.status(200).json({message: 'welcome to the api!'});
 });
 //get logged in status
-router.get('/',passport.authenticate('jwt',{session: false}),async function(req,res,next){
+router.get('/login',passport.authenticate('jwt',{session: false}),async function(req,res,next){
   res.status(200).json({signedIn: true});
 });
 //login
@@ -33,7 +33,7 @@ router.post('/login',async function(req,res,next){
 });
 
 //create a user
-router.post('/user',passport.authenticate('jwt',{session: false}),async function(req,res,next){
+router.post('/signup',passport.authenticate('jwt',{session: false}),async function(req,res,next){
   //hash password
   const hashedPassword = await bcrypt.hash(req.body.password,10);
   //create a new user sending user inputs to the createUser model.
