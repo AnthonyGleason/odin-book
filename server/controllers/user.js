@@ -9,6 +9,7 @@ let createUser = async function(firstName,lastName,age,email,password){
       age: age,//age
       email: email,//email
       password: password,//password
+      friendRequests: [], //friend requests
       friends: [],//friends
       likes: [],//likes
       shares: [],//shares
@@ -26,6 +27,14 @@ let getUser = async function(docID){
     console.log(`Error getting data for user, ${docID}, ${e}`);
   };
   
+};
+//get user by email
+let getUserByEmail=async function(email){
+  try{
+    return await UserModel.findOne({'email': email});
+  }catch(e){
+    console.log(`Error when getting a user with email, ${email}, ${e}`);
+  }
 };
 //get all users
 let getAllUsers = async function(){
@@ -57,5 +66,6 @@ module.exports = {
   getUser,
   getAllUsers,
   updateUser,
-  deleteUser
+  deleteUser,
+  getUserByEmail
 };

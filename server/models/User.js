@@ -23,6 +23,9 @@ const UserSchema = new mongoose.Schema({
     type: String, //Password which is hashed by bcrypt
     required: true
   },
+  friendRequests:[{
+    type: mongoose.Schema.Types.ObjectId, // recieved friend requests
+  }],
   friends: [{
     type: mongoose.Schema.Types.ObjectId, //friends are stored as references to another document ID of the friend's user document
   }],

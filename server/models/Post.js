@@ -7,28 +7,28 @@ const PostSchema = new mongoose.Schema({
   likes: {
     type: Number,
     min: 0,
-    required
+    required: true
   },
   shares: {
     type: Number,
     min: 0,
-    required
+    required: true
   }, 
   author: {
     type: mongoose.Schema.Types.ObjectId,
-    required 
+    required: true
   },
   text: {
     type: String,
-    required
+    required: true
   },
   title: {
     type: String,
-    required
+    required: true
   },
   dateCreated: {
     type: Date,
-    required
+    required: true
   }
 });
 
