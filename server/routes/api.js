@@ -156,7 +156,7 @@ router.post('/user/:id/decline',passport.authenticate('jwt',{session: false}),as
 //create a post
 router.post('/post',passport.authenticate('jwt',{session: false}),async(req,res,next)=>{
   //get docID of current user
-  const docID = req.user._id;
+  const docID = req.user._id.toString();
   //create a new post
   try{
     //create post
@@ -168,7 +168,7 @@ router.post('/post',passport.authenticate('jwt',{session: false}),async(req,res,
     //get user
     let user = await getUser(docID);
     //add post id to user posts array
-    user.posts.push(post._id);
+    user.posts.push(post._id.toString());
     //update user
     user = await updateUser(docID,user);
     res.status(200).json({'user': user});

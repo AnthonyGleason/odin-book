@@ -12,6 +12,7 @@ let createUser = async function(firstName,lastName,age,email,password){
       friendRequests: [], //friend requests
       friends: [],//friends
       likes: [],//likes
+      posts: [],//posts
       shares: [],//shares
       comments: [],//comments
       dateCreated: Date.now()//dateCreated

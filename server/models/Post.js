@@ -4,16 +4,12 @@ const PostSchema = new mongoose.Schema({
   comments:[{
     type: mongoose.Schema.Types.ObjectId,
   }],
-  likes: {
-    type: Number,
-    min: 0,
-    required: true
-  },
-  shares: {
-    type: Number,
-    min: 0,
-    required: true
-  }, 
+  likes: [{
+    type: mongoose.Schema.Types.ObjectId,
+  }],
+  shares: [{
+    type: mongoose.Schema.Types.ObjectId,
+  }], 
   author: {
     type: mongoose.Schema.Types.ObjectId,
     required: true

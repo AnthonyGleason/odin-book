@@ -29,6 +29,9 @@ const UserSchema = new mongoose.Schema({
   friends: [{
     type: mongoose.Schema.Types.ObjectId, //friends are stored as references to another document ID of the friend's user document
   }],
+  posts: [{
+    type: mongoose.Schema.Types.ObjectId, //posts are stored as references to another documnet ID of the post data
+  }],
   likes:[{
     type: mongoose.Schema.Types.ObjectId, //likes are stored as references to another document ID of the like data
 
