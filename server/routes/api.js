@@ -27,7 +27,7 @@ router.post('/login',async function(req,res,next){
   if (match){
     const token = jwt.sign({ id: user._id }, process.env.SECRET); //sign a jwt token
     //http only is disabled so we can access the cookie value in the client
-    res.status(200).cookie('jwt', token, { httpOnly: false, secure: true }).json({message: 'sucessfully logged in'});
+    res.status(200).cookie('jwt', token, { httpOnly: false, secure: true }).json({message: 'successfully signed in'});
   }else{
     res.status(401).json({err: 'error logging in'});
   };
@@ -35,7 +35,6 @@ router.post('/login',async function(req,res,next){
 
 //create a user
 router.post('/signup',async function(req,res,next){
-  console.log(req.body);
   if (req.body.password!==req.body.passwordConfirm) res.status(401).json({err: 'passwords do not match'});
   //hash password
   const hashedPassword = await bcrypt.hash(req.body.password,10);
@@ -162,7 +161,7 @@ router.post('/post',passport.authenticate('jwt',{session: false}),async(req,res,
   try{
     //create post
     const post = await createPost(
-      req.body.docID,//author
+      docID,//author
       req.body.text,//text
       req.body.title//title
     );
@@ -176,6 +175,18 @@ router.post('/post',passport.authenticate('jwt',{session: false}),async(req,res,
   }catch(e){
     console.log(`Error when creating a post, ${e}`);
     res.status(500).json({err: 'Error when creating a new post'});
+  }
+});
+
+//get a post
+router.get('/post/:id',passport.authenticate('jwt',{session: false}), async(req,res,next)=>{
+  const postID = req.params.id;
+  let postObj;
+  try{
+    postObj = await getPost(postID);
+    res.status(200).json({post: postObj});
+  }catch(e){
+    res.status(500).json({err: e});
   }
 });
 
@@ -305,6 +316,18 @@ router.delete('/post/:id/share',passport.authenticate('jwt',{session: false}),as
     res.status(500).json({err: 'error handling post unshare'});
   }
 });
+
+//get a comment
+router.get('/post/:id/comment/:commentID',passport.authenticate('jwt',{session: false}, async(req,res,next)=>{
+  const commentID = req.params.commentID;
+  let commentObj;
+  try{
+    commentObj = await getComment(commentID);
+    res.status(200).json({comment: commentObj});
+  }catch(e){
+    res.status(500).json({err: e});
+  }
+}));
 
 //create a comment on a post
 router.post('/post/:id/comment',passport.authenticate('jwt',{session: false}),async(req,res,next)=>{
