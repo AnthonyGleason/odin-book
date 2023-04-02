@@ -5,6 +5,7 @@ const {createComment, updateComment, getComment} = require('../controllers/comme
 var router = express.Router();
 const bcrypt = require('bcrypt');
 const passport = require('passport');
+const jwt = require('jsonwebtoken');
 //setup dotenv
 const env = require('dotenv');
 env.config();
@@ -24,16 +25,18 @@ router.post('/login',async function(req,res,next){
   const user = await getUserByEmail(emailInput); //get the user object from mongodb
   const match = await bcrypt.compare(passwordInput, user.password); //compare the hashed password to the inputted password
   if (match){
-    const token = jwt.sign({ id: user._id }, SECRET); //sign a jwt token
+    const token = jwt.sign({ id: user._id }, process.env.SECRET); //sign a jwt token
     //http only is disabled so we can access the cookie value in the client
-    res.status(200).cookie('jwt', token, { httpOnly: false, secure: true });
+    res.status(200).cookie('jwt', token, { httpOnly: false, secure: true }).json({message: 'sucessfully logged in'});
   }else{
-    res.status(401).json({message: 'password do not match'});
+    res.status(401).json({err: 'error logging in'});
   };
 });
 
 //create a user
-router.post('/signup',passport.authenticate('jwt',{session: false}),async function(req,res,next){
+router.post('/signup',async function(req,res,next){
+  console.log(req.body);
+  if (req.body.password!==req.body.passwordConfirm) res.status(401).json({err: 'passwords do not match'});
   //hash password
   const hashedPassword = await bcrypt.hash(req.body.password,10);
   //create a new user sending user inputs to the createUser model.

@@ -11,7 +11,7 @@ import Signup from './components/Signup';
 import User from './components/User';
 import Post from './components/Post';
 import Profile from './components/Profile';
-
+import AllUsers from './components/AllUsers';
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
@@ -23,6 +23,7 @@ root.render(
         <Route path='/' element={<Timeline />}/>
         <Route path='/login' element={<Login />}/>
         <Route path='/signup' element={<Signup />} />
+        <Route path='/user/all' element={<AllUsers />} />
         <Route path='/user/:userID' element={<User />} />
         <Route path='/posts/:postID' element={<Post />} />
         <Route path='/timeline' element={<Timeline />}/>
