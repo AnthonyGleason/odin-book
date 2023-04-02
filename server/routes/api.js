@@ -177,7 +177,25 @@ router.post('/post',passport.authenticate('jwt',{session: false}),async(req,res,
     res.status(500).json({err: 'Error when creating a new post'});
   }
 });
-
+//get all posts of a user
+router.get('/post/all', passport.authenticate('jwt', { session: false }), async (req, res, next) => {
+  try {
+    //get user from signed in user
+    const userID = req.user._id;
+    //fetch current user from mongodb
+    const userObj = await getUser(userID);
+    let postData = [];
+    //get each post data and put it in an array
+    for (const postID of userObj.posts) {
+      const post = await getPost(postID);
+      postData.push(post);
+    }
+    //return post data to client
+    res.status(200).json({ posts: postData });
+  } catch (error) {
+    next(error);
+  }
+});
 //get a post
 router.get('/post/:id',passport.authenticate('jwt',{session: false}), async(req,res,next)=>{
   const postID = req.params.id;
@@ -189,7 +207,6 @@ router.get('/post/:id',passport.authenticate('jwt',{session: false}), async(req,
     res.status(500).json({err: e});
   }
 });
-
 //update a post
 router.put('/post/:id',passport.authenticate('jwt',{session: false}),async(req,res,next)=>{
   //see if post was created by the current authenticated user
