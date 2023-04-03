@@ -177,8 +177,8 @@ router.post('/post',passport.authenticate('jwt',{session: false}),async(req,res,
     res.status(500).json({err: 'Error when creating a new post'});
   }
 });
-//get all posts of a user
-router.get('/post/all', passport.authenticate('jwt', { session: false }), async (req, res, next) => {
+//get all posts of the signed in user
+router.get('/user/post/all', passport.authenticate('jwt', { session: false }), async (req, res, next) => {
   try {
     //get user from signed in user
     const userID = req.user._id;
@@ -192,6 +192,63 @@ router.get('/post/all', passport.authenticate('jwt', { session: false }), async 
     }
     //return post data to client
     res.status(200).json({ posts: postData });
+  } catch (error) {
+    next(error);
+  }
+});
+//get all comments of the signed in user
+router.get('/user/comments/all', passport.authenticate('jwt', { session: false }), async (req, res, next) => {
+  try {
+    //get user from signed in user
+    const userID = req.user._id;
+    //fetch current user from mongodb
+    const userObj = await getUser(userID);
+    let commentData = [];
+    //get each comment data and put it in an array
+    for (const commentID of userObj.comments) {
+      const comment = await getComment(commentID);
+      commentData.push(comment);
+    }
+    //return comment data to client
+    res.status(200).json({ comments: commentData });
+  } catch (error) {
+    next(error);
+  }
+});
+//get all shares of the signed in user
+router.get('/user/shares/all', passport.authenticate('jwt', { session: false }), async (req, res, next) => {
+  try {
+    //get user from signed in user
+    const userID = req.user._id;
+    //fetch current user from mongodb
+    const userObj = await getUser(userID);
+    let sharesData = [];
+    //get each share data and put it in an array
+    for (const postID of userObj.shares) {
+      let share = await getPost(postID);
+      sharesData.push(share);
+    }
+    //return share data to client
+    res.status(200).json({ shares: sharesData });
+  } catch (error) {
+    next(error);
+  }
+});
+//get all likes of the signed in user
+router.get('/user/likes/all', passport.authenticate('jwt', { session: false }), async (req, res, next) => {
+  try {
+    //get user from signed in user
+    const userID = req.user._id;
+    //fetch current user from mongodb
+    const userObj = await getUser(userID);
+    let likesData = [];
+    //get each like data and put it in an array
+    for (const userID of userObj.likes) {
+      const like = await getUser(userID);
+      likesData.push(like);
+    }
+    //return post data to client
+    res.status(200).json({ likes: likesData });
   } catch (error) {
     next(error);
   }

@@ -19,8 +19,14 @@ function App() {
         getPosts(setPosts);
         break;
       case 'comments':
+        getComments(setComments);
+        break;
       case 'likes':
+        getLikes(setLikes);
+        break;
       case 'shares':
+        getShares(setShares);
+        break;
     }
   },[currentTab])
 
@@ -31,7 +37,6 @@ function App() {
         <li onClick={()=>{setCurrentTab('comments')}}>Comments</li>
         <li onClick={()=>{setCurrentTab('likes')}}>Likes</li>
         <li onClick={()=>{setCurrentTab('shares')}}>Shares</li>
-        <li>{currentTab}</li>
       </ul>
       <form>
         <div>
@@ -49,10 +54,17 @@ function App() {
           posts.map((i:any)=>{
             return(
               <div className='post' key={Math.random()}>
-                <div>Title: {i.title}</div>
-                <div>Text: {i.text}</div>
-                <div>Date Created: {i.dateCreated}</div>
-                <div>Author: {i.author}</div>
+                <div className='post-content'>
+                  <div>Title: {i.title}</div>
+                  <div>Text: {i.text}</div>
+                  <div>Date Created: {i.dateCreated}</div>
+                  <div>Author: {i.author}</div>
+                </div>
+                <div className='post-footer'>
+                  <div>Likes: {i.likes.length}</div>
+                  <div>Comments: {i.comments.length}</div>
+                  <div>Shares: {i.shares.length}</div>
+                </div>
               </div>
             )
           }) : null
@@ -108,20 +120,67 @@ let createPost = async function(titleInput:String,textInput:String,setPosts:any)
   );
   await getPosts(setPosts);
 };
-
 let getPosts = async function(setPosts:any) {
   const jwt:any = Cookies.get('jwt');
   //send a request for all of the users post data
   try {
-    const response = await fetch('http://localhost:5000/api/post/all', {
+    const response = await fetch('http://localhost:5000/api/user/post/all', {
       method: "GET",
       headers: {
         'Authorization': `Bearer ${jwt}`
-      },
+      }
     });
     const jsonData = await response.json();
     const posts = jsonData.posts; // extract the posts array from the JSON data
     setPosts(posts);
+  } catch(e) {
+    console.log(`An error, ${e} has occured`);
+  };
+};
+let getComments = async function(setComments:any){
+  const jwt:any = Cookies.get('jwt');
+  try {
+    const response = await fetch('http://localhost:5000/api/user/comments/all', {
+      method: "GET",
+      headers: {
+        'Authorization': `Bearer ${jwt}`
+      }
+    });
+    const jsonData = await response.json();
+    const comments= jsonData.comments; // extract the posts array from the JSON data
+    setComments(comments);
+  } catch(e) {
+    console.log(`An error, ${e} has occured`);
+  };
+};
+let getShares = async function(setShares:any){
+  const jwt:any = Cookies.get('jwt');
+  try {
+    const response = await fetch('http://localhost:5000/api/user/shares/all', {
+      method: "GET",
+      headers: {
+        'Authorization': `Bearer ${jwt}`
+      }
+    });
+    const jsonData = await response.json();
+    const shares= jsonData.shares; // extract the posts array from the JSON data
+    setShares(shares);
+  } catch(e) {
+    console.log(`An error, ${e} has occured`);
+  };
+};
+let getLikes = async function(setLikes:any){
+  const jwt:any = Cookies.get('jwt');
+  try {
+    const response = await fetch('http://localhost:5000/api/user/likes/all', {
+      method: "GET",
+      headers: {
+        'Authorization': `Bearer ${jwt}`
+      }
+    });
+    const jsonData = await response.json();
+    const likes= jsonData.likes; // extract the posts array from the JSON data
+    setLikes(likes);
   } catch(e) {
     console.log(`An error, ${e} has occured`);
   };

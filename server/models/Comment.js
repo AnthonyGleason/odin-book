@@ -1,11 +1,11 @@
 const mongoose = require('mongoose');
 const CommentSchema = new mongoose.Schema({
-  likes: {
+  likes: {//dont use
     type: Number,
     required: true,
     min: 0,
   },
-  shares: {
+  shares: {//dont use
     type: Number,
     required: true,
     min: 0,
