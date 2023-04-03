@@ -1,5 +1,5 @@
 var express = require('express');
-const { createUser, getUser, updateUser, getUserByEmail } = require('../controllers/user');
+const { createUser, getUser, updateUser, getUserByEmail, getAllUsers } = require('../controllers/user');
 const {createPost,getPost, updatePost, deletePost} = require('../controllers/post');
 const {createComment, updateComment, getComment} = require('../controllers/comment');
 var router = express.Router();
@@ -16,7 +16,7 @@ router.get('/', function(req, res, next) {
 });
 //get logged in status
 router.get('/login',passport.authenticate('jwt',{session: false}),async function(req,res,next){
-  res.status(200).json({signedIn: true});
+  res.status(200).json({user: req.user});
 });
 //login
 router.post('/login',async function(req,res,next){
@@ -53,7 +53,15 @@ router.post('/signup',async function(req,res,next){
     res.status(500).json({err: 'Internal Server Error'});
   }
 });
-
+//get all users
+router.get('/user/all',passport.authenticate('jwt',{session: false}), async(req,res,next)=>{
+  try{
+    const userObjArr = await getAllUsers();
+    res.status(200).json({allUsers: userObjArr});
+  }catch(e){
+    json.status(500).json({err: `error ${e} when getting all user data`});
+  }
+})
 //get a user
 router.get('/user/:id', passport.authenticate('jwt',{session: false}),async function(req,res,next){
   try{
@@ -64,7 +72,6 @@ router.get('/user/:id', passport.authenticate('jwt',{session: false}),async func
     res.status(500).json({err: 'Internal Server Error'});
   }
 });
-
 //update a user
 router.put('/user/:id', passport.authenticate('jwt',{session: false}),async function(req,res,next){
   //get user id to be updated
@@ -123,7 +130,7 @@ router.post('/user/:id/accept',passport.authenticate('jwt',{session: false}),asy
     userOneObj.friends.push(userTwoID);
     userTwoObj.friends.push(userOneID);
     //clear the friend request from the current user's friendRequests array 
-    userOneObj.splice(userOneObj.friendRequests.indexOf(userTwoID),1);
+    userOneObj.friendRequests.splice(userOneObj.friendRequests.indexOf(userTwoID),1);
     //update both users
     await updateUser(userOneID, userOneObj);
     await updateUser(userTwoID, userTwoObj);
@@ -143,7 +150,7 @@ router.post('/user/:id/decline',passport.authenticate('jwt',{session: false}),as
   try{
     let userOneObj = await getUser(userOneID);
     //clear the friend request from the current user's friendRequests array 
-    userOneObj.splice(userOneObj.friendRequests.indexOf(userTwoID),1);
+    userOneObj.friendRequests.splice(userOneObj.friendRequests.indexOf(userTwoID),1);
     //update user
     const user = await updateUser(userOneID, userOneObj);
     res.status(200).json({user: user});
