@@ -53,7 +53,7 @@ function App() {
         {currentTab === 'posts' ?
           posts.map((i:any)=>{
             return(
-              <div className='post' key={Math.random()}>
+              <div className='post' onClick={()=>{window.location.href=`/posts/${i._id}`}} key={Math.random()}>
                 <div className='post-content'>
                   <div>Title: {i.title}</div>
                   <div>Text: {i.text}</div>
