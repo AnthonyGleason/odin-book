@@ -105,6 +105,17 @@ router.get('/user/:id', passport.authenticate('jwt',{session: false}),async func
     res.status(500).json({err: 'Internal Server Error'});
   }
 });
+//get user data
+router.get('/user/:id/data', passport.authenticate('jwt',{session: false}),async function(req,res,next){
+  try{
+    const user = await getUser(req.params.id.toString()); //get a user with docID from url params
+    console.log(user);
+    res.status(200).json({user: user});
+  }catch(e){
+    console.log(`There was an error when getting a user, ${e}`);
+    res.status(500).json({err: 'Internal Server Error'});
+  }
+});
 //update a user
 router.put('/user/:id', passport.authenticate('jwt',{session: false}),async function(req,res,next){
   //get user id to be updated
