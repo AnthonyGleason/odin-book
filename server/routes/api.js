@@ -14,6 +14,39 @@ env.config();
 router.get('/', function(req, res, next) {
   res.status(200).json({message: 'welcome to the api!'});
 });
+/* gets the currently signed in user's friends post/share data. returns it in a json object containing post and share
+//organizes it by date */
+router.get('/user/timeline', passport.authenticate('jwt', {session: false}), async function(req, res, next) {
+  const currentUserID = req.user._id;
+  try{
+    const currentUserObj = await getUser(currentUserID);
+    let friendPostArr = [];
+    let friendShareArr = [];
+
+    for (const friendID of currentUserObj.friends) {
+      //get friends userobj
+      let friendObj = await getUser(friendID);
+      //get all their share data
+      for (const shareID of friendObj.shares) {
+        const share = await getPost(shareID);
+        friendShareArr.push({ share: share, friend: friendObj });
+      }
+      //get all their post data
+      for (const postID of friendObj.posts) {
+        const post = await getPost(postID);
+        friendPostArr.push(post);
+      }
+    }
+
+    res.status(200).json({
+      posts: friendPostArr,
+      shares: friendShareArr
+    });
+  } catch(e){
+    res.status(500).json({err: e});
+  }
+});
+
 //get logged in status
 router.get('/login',passport.authenticate('jwt',{session: false}),async function(req,res,next){
   res.status(200).json({user: req.user});

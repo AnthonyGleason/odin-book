@@ -25,7 +25,6 @@ function App() {
         <div className='comments-container'>
           {
             commentsArr.map((i:any)=>{
-              console.log(i);
               return(
               <div className='comment' key={Math.random()}>
                 <div>{i.text}</div>
