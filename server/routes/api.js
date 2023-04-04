@@ -292,7 +292,29 @@ router.put('/post/:id',passport.authenticate('jwt',{session: false}),async(req,r
     res.status(500).json({err: `Internal error occured when updating the post ${e}`});
   }
 });
-
+//create a comment on a post
+router.post('/post/:id/comment',passport.authenticate('jwt',{session: false}),async(req,res,next)=>{
+  const postID = req.params.id;
+  const userID = req.user._id;
+  try{
+    const comment = await createComment(
+      userID, //author
+      req.body.text//text
+    );
+    //update comments arrays
+    let post = await getPost(postID);
+    let user = await getUser(userID);
+    post.comments.push(comment._id);
+    user.comments.push(comment._id);
+    //update mongodb
+    await updatePost(postID,post);
+    await updateUser(userID,user);
+    res.status(200).json({message: `created a comment with docID ${comment._id}`});
+  }catch(e){
+    console.log(`Error when creating comment, ${e}`);
+    res.status(500).json({err: `error when creating a comment on post, ${postID}, with user, ${userID}`});
+  };
+});
 //allow users to delete their own posts
 router.delete('/post/:id',passport.authenticate('jwt',{session: false}),async(req,res,next)=>{
   //see if post was created by the current authenticated user
@@ -399,7 +421,7 @@ router.delete('/post/:id/share',passport.authenticate('jwt',{session: false}),as
 });
 
 //get a comment
-router.get('/post/:id/comment/:commentID',passport.authenticate('jwt',{session: false}, async(req,res,next)=>{
+router.get('/post/:id/comment/:commentID', passport.authenticate('jwt', {session: false}), async (req,res,next) => {
   const commentID = req.params.commentID;
   let commentObj;
   try{
@@ -408,30 +430,6 @@ router.get('/post/:id/comment/:commentID',passport.authenticate('jwt',{session: 
   }catch(e){
     res.status(500).json({err: e});
   }
-}));
-
-//create a comment on a post
-router.post('/post/:id/comment',passport.authenticate('jwt',{session: false}),async(req,res,next)=>{
-  const postID = req.params.id;
-  const userID = req.user._id;
-  try{
-    const comment = await createComment(
-      userID, //author
-      req.body.text//text
-    );
-    //update comments arrays
-    let post = await getPost(postID);
-    let user = await getUser(userID);
-    post.comments.push(comment._id);
-    user.comments.push(comment._id);
-    //update mongodb
-    await updatePost(postID,post);
-    await updateUser(userID,user);
-    res.status(200).json({message: `created a comment with docID ${comment._id}`});
-  }catch(e){
-    console.log(`Error when creating comment, ${e}`);
-    res.status(500).json({err: `error when creating a comment on post, ${postID}, with user, ${userID}`});
-  };
 });
 
 //update comment
